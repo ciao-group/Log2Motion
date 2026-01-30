@@ -1,0 +1,118 @@
+<mujoco model="MyoArm_v0.01">
+    <visual>
+        <global offwidth="1920" offheight="1080"/>
+    </visual>
+    <!-- =================================================
+        Copyright 2020 Vikash Kumar, Vittorio Caggiano, Guillaume Durandau
+        Model   :: Myo Hand (MuJoCoV2.0)
+        Author  :: Vikash Kumar (vikashplus@gmail.com), Vittorio Caggiano, Huawei Wang
+        source  :: https://github.com/vikashplus
+        License :: Under Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+    ====================================================== -->
+
+    <include file="/simhive/myo_sim/arm/assets/myoarm_assets.xml"/>
+    <include file="/simhive/myo_sim/scene/myosuite_scene.xml"/>
+    <compiler meshdir='./simhive/myo_sim/' texturedir='./simhive/myo_sim/'/>
+
+    <asset>
+        <mesh file="../myo_sim/meshes/human_lowpoly_norighthand.stl" name="body_norighthand"/>
+        <texture name="tabletop" type="2d" file="../furniture_sim/common/textures/stone2.png"/>
+        <material name="tabletop" texture="tabletop" rgba=".95 .95 .95 1"/>
+        <texture name="texwood" type="cube" file="../myo_sim/scene/floor0.png"/>
+        <material name="matwood" reflectance="0.01" texture="texwood" texuniform="false"/>
+    </asset>
+    <asset>
+        <texture name="smartphone_texture"
+                 file="../../yellow_surface.png"
+                 type="2d"/>
+        <material name="smartphone_material" texture="smartphone_texture"/>
+        <!-- Define a frame material -->
+        <material name="frame_material" rgba="0 0 0 1"/>
+    </asset>
+
+    <worldbody>
+        <geom type="mesh" mesh="meshscene" pos="0 0 -.41326" euler="0 0 0"
+              rgba="1 1 1 1" conaffinity="0" contype="0"/>
+        <camera name="smartphone_view"
+                pos="0.5 -0.25 1.4"
+                euler="0 1.10 1.6"
+                mode="fixed"/>
+        <!-- ======= MyoArm ======= -->
+        <geom name="body" type="mesh" mesh="body_norighthand" euler="0 0 3.14" contype="0" conaffinity="0"/>
+        <body name="full_body" pos="-.025 0.1 1.40">
+            <include file="/simhive/myo_sim/arm/assets/myoarm_body.xml"/>
+            <camera name="left_eye" mode="targetbody" target="smartphone" pos=".063 -0.08 .28" quat="1 0 0 0"/>
+            <camera name="right_eye" mode="targetbody" target="smartphone" pos=".0 -0.08 .28" quat="1 0 0 0"/>
+
+        </body>
+
+        <!-- ======= Table ======= -->
+        <!--        <body name="table" pos="0 -.5 1.0">-->
+        <body name="table" pos="0 -.5 0.904">
+            <geom name="table_top" type="box" size=".8 .5 .05" contype="1" conaffinity="1" material="tabletop"/>
+            <geom name="table_base" type="box" size=".35 .6 .45" pos="0 0 -.45" euler="0 0 1.57" contype="1"
+                  conaffinity="1" material="matwood"/>
+
+
+            <!-- Invisible collision surface behind phone -->
+            <geom name="invisible_wall" type="box"
+                  size="0.1 0.15 0.0005"
+                  pos="0 .25 .149"
+                  euler="-0.5752221 0 0"
+                  conaffinity="1"
+                  rgba="0 0 0 0"/>
+
+            <geom name="smartphone_shell" type="box"
+                  size="0.038 0.0765 0.002"
+                  pos="0 .246 .148"
+                  euler="-0.5752221 0 0"
+                  conaffinity="1"
+                  rgba="0 0 0 1"/>
+
+            <body name="smartphone" pos="0 .25 .15" euler="-0.5752221 0 0">
+                <!-- Smartphone main geometry -->
+                <site name="smartphone_geom_touch" size="0.0333 0.074 0.001" pos="0 0 0.001" rgba="0 0 0 0.0"
+                      type="box"/>
+                <geom name="smartphone_geom" type="box" size="0.0333 0.074 0.001" pos="0 0 0.001"
+                      material="smartphone_material" contype="1" conaffinity="1"
+                      friction="0.2 0.001 0.0001"/>
+                <!-- Frame: Thin sides outside the smartphone -->
+                <geom name="frame_left" type="box" size="0.002 0.074 0.001" pos="-0.0353 0 0.001"
+                      material="frame_material"/>
+                <geom name="frame_right" type="box" size="0.002 0.074 0.001" pos="0.0353 0 0.001"
+                      material="frame_material"/>
+
+                <!-- Frame: Top and Chin, matching side width and outside the smartphone -->
+                <geom name="frame_top" type="box" size="0.0373 0.002 0.001" pos="0 0.076 0.001"
+                      material="frame_material"/>
+                <geom name="frame_chin" type="box" size="0.0373 0.002 0.001" pos="0 -0.076 0.001"
+                      material="frame_material"/>
+
+
+                <!-- Touch Area -->
+                <site name="touch_area_1" pos="0.00 0.00 0.002" size="0.005 0.0001" rgba="0 0 0 0.0"
+                      type="cylinder"/>
+                <geom name="touch_area_1_geom" pos="0.00 0.00 0.002" size="0.005 0.0001" rgba="0 0 0 0.0"
+                      contype="1"
+                      conaffinity="0"
+                      type="cylinder"/>
+            </body>
+
+        </body>
+
+
+    </worldbody>
+    <tendon>
+        <!-- Target positions for fingertip -->
+        <spatial name="IFtip_err_1" rgba="1 0 0 0.2">
+            <site site="IFtip"/>
+            <site site="touch_area_1"/>
+        </spatial>
+    </tendon>
+    <sensor>
+        <touch name="touch_sensor_1" site="touch_area_1"/>
+    </sensor>
+    <sensor>
+        <touch name="smartphone_geom_touch" site="smartphone_geom_touch"/>
+    </sensor>
+</mujoco>
